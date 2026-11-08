@@ -1,0 +1,45 @@
+[gd_scene format=3 uid="uid://cc8yx42o2q40c"]
+
+[ext_resource type="PackedScene" uid="uid://dubjlw5ei168x" path="res://assets/car.glb" id="1_car"]
+
+[sub_resource type="ProceduralSkyMaterial" id="SkyMaterial"]
+sky_top_color = Color(0.25, 0.38, 0.55, 1)
+sky_horizon_color = Color(0.7, 0.78, 0.85, 1)
+ground_bottom_color = Color(0.12, 0.15, 0.19, 1)
+ground_horizon_color = Color(0.7, 0.78, 0.85, 1)
+
+[sub_resource type="Sky" id="Sky"]
+sky_material = SubResource("SkyMaterial")
+
+[sub_resource type="Environment" id="Environment"]
+background_mode = 2
+sky = SubResource("Sky")
+ambient_light_source = 3
+ambient_light_color = Color(0.8, 0.85, 1, 1)
+ambient_light_energy = 0.6
+reflected_light_source = 2
+
+[sub_resource type="PlaneMesh" id="GroundMesh"]
+size = Vector2(200, 200)
+
+[node name="CarPreview" type="Node3D" unique_id=1118851021]
+
+[node name="Car" parent="." unique_id=1075568727 instance=ExtResource("1_car")]
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1212418506]
+environment = SubResource("Environment")
+
+[node name="Sun" type="DirectionalLight3D" parent="." unique_id=620177626]
+transform = Transform3D(0.81915206, 0.4055798, -0.4055798, 0, 0.70710677, 0.70710677, 0.57357645, -0.579228, 0.579228, 0, 0, 0)
+light_energy = 1.3
+shadow_enabled = true
+
+[node name="Ground" type="MeshInstance3D" parent="." unique_id=1744745843]
+transform = Transform3D(1, 0, 0, 0, 0.9999921, 0.0039761118, 0, -0.0039761118, 0.9999921, 0, -0.015, 0)
+mesh = SubResource("GroundMesh")
+
+[node name="Camera3D" type="Camera3D" parent="." unique_id=727332929]
+transform = Transform3D(-0.7700681, -0.21819574, 0.5994879, 0, 0.9396926, 0.34202012, -0.6379617, 0.2633788, -0.7236273, 5.8, 4.1, -7)
+projection = 1
+current = true
+size = 6.6

@@ -1,0 +1,4 @@
+[gd_scene load_steps=2 format=3]
+[ext_resource type="PackedScene" path="res://city.tscn" id="1_city"]
+[node name="PacificCityNight" instance=ExtResource("1_city")]
+night_mode = true

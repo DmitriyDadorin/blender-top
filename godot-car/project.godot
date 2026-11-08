@@ -1,0 +1,36 @@
+; Engine configuration file.
+; It's best edited using the editor UI and not directly,
+; since the parameters that go here are not all obvious.
+;
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
+
+config_version=5
+
+[application]
+
+config/name="Машина — первый проект"
+run/main_scene="res://game.tscn"
+config/features=PackedStringArray("4.7")
+
+[display]
+
+window/size/viewport_width=1100
+window/size/viewport_height=800
+window/stretch/mode="canvas_items"
+
+[physics]
+
+common/physics_interpolation=true
+
+[rendering]
+
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
+environment/defaults/default_clear_color=Color(0.16, 0.2, 0.25, 1)
+
+anti_aliasing/quality/msaa_3d=2
+
+; Avoid headlight shadow banding on surfaces near the 64 m beam range.
+lights_and_shadows/positional_shadow/atlas_16_bits=false

@@ -1,0 +1,43 @@
+[gd_scene load_steps=8 format=3]
+[ext_resource type="Script" path="res://scripts/city_world.gd" id="1_script"]
+[ext_resource type="PackedScene" path="res://assets/pacific_city.glb" id="2_city"]
+[ext_resource type="Script" path="res://scripts/city_horizon.gd" id="3_horizon"]
+[sub_resource type="ProceduralSkyMaterial" id="SkyMaterial"]
+sky_top_color = Color(0.14, 0.35, 0.61, 1)
+sky_horizon_color = Color(0.76, 0.79, 0.81, 1)
+ground_bottom_color = Color(0.28, 0.30, 0.32, 1)
+ground_horizon_color = Color(0.76, 0.79, 0.81, 1)
+[sub_resource type="Sky" id="Sky"]
+sky_material = SubResource("SkyMaterial")
+[sub_resource type="Environment" id="Environment"]
+background_mode = 2
+sky = SubResource("Sky")
+ambient_light_source = 3
+ambient_light_color = Color(0.9, 0.9, 0.86, 1)
+ambient_light_energy = 0.48
+reflected_light_source = 2
+fog_enabled = true
+fog_light_color = Color(0.72, 0.76, 0.8, 1)
+fog_density = 0.00035
+fog_sky_affect = 0.15
+[sub_resource type="CameraAttributesPractical" id="CameraAttributes"]
+auto_exposure_enabled = false
+[node name="PacificCityWorld" type="Node3D"]
+script = ExtResource("1_script")
+[node name="CityModel" parent="." instance=ExtResource("2_city")]
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment")
+[node name="Sun" type="DirectionalLight3D" parent="."]
+rotation_degrees = Vector3(-47,-32,0)
+light_color = Color(1,0.96,0.88,1)
+light_energy = 0.95
+shadow_enabled = true
+directional_shadow_max_distance = 220.0
+directional_shadow_pancake_size = 250.0
+[node name="Camera3D" type="Camera3D" parent="."]
+position = Vector3(12,6,435)
+far = 20000.0
+attributes = SubResource("CameraAttributes")
+
+[node name="Horizon" type="Node3D" parent="."]
+script = ExtResource("3_horizon")
