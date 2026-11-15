@@ -6,21 +6,25 @@
 
 ## Готовое приложение для Mac
 
-[Скачать Drive для Mac — Apple Silicon](https://github.com/DmitriyDadorin/blender-top/releases/download/v0.1.0-macos-arm64/Drive-macOS-arm64-0.1.0.zip) · [Описание сборки и контрольная сумма](https://github.com/DmitriyDadorin/blender-top/releases/tag/v0.1.0-macos-arm64)
+[Скачать Drive.dmg для Mac — Apple Silicon](https://github.com/DmitriyDadorin/blender-top/releases/download/v0.1.0-macos-arm64/Drive-macOS-arm64-0.1.0.dmg) · [Описание сборки и контрольная сумма](https://github.com/DmitriyDadorin/blender-top/releases/tag/v0.1.0-macos-arm64)
 
-Распакуйте ZIP, перенесите `Drive.app` в «Программы» и откройте приложение.
+Откройте DMG, перетащите `Drive` на папку `Applications` справа, дождитесь копирования и откройте игру из «Программ». После установки образ можно извлечь.
 
-Сборка для Apple Silicon (M1 и новее), **macOS 13+**: `Drive.app` и ZIP создаются в `build/macos-arm64/`. В приложении все четыре карты и обе машины. Для запуска готовой сборки редакторы Godot и Blender не требуются.
+**Первый запуск:** эта сборка не нотарифицирована Apple. Если macOS пишет, что не может проверить Drive, закройте предупреждение, откройте «Системные настройки → Конфиденциальность и безопасность» и разрешите Drive через «Открыть всё равно». DMG не отменяет эту проверку. [Инструкция Apple](https://support.apple.com/102445). Подробная инструкция также находится внутри образа в `Установка.txt`.
+
+Сборка для Apple Silicon (M1 и новее), **macOS 13+**: `Drive.app`, DMG и ZIP создаются в `build/macos-arm64/`. В приложении все четыре карты и обе машины. Для запуска готовой сборки редакторы Godot и Blender не требуются.
 
 Чтобы пересобрать приложение на Mac, установите экспортные шаблоны **Godot 4.7.2** через `Editor → Manage Export Templates` и выполните из корня репозитория:
 
 ```sh
-python3 godot-car/tools/build_macos.py
+python3 -m venv build/macos-tools
+build/macos-tools/bin/python -m pip install -r godot-car/tools/requirements-macos.txt
+build/macos-tools/bin/python godot-car/tools/build_macos.py --dmg
 ```
 
-Пресет `macOS Apple Silicon` собирает ARM64 release, исключает инструменты и исходные записи звука. Скрипт добавляет лицензии, подписывает приложение локальной ad-hoc подписью, проверяет архитектуру и запуск всех карт, создаёт ZIP и SHA-256. Игровой профиль сохраняется по прежнему пути.
+Пресет `macOS Apple Silicon` собирает ARM64 release, исключает инструменты и исходные записи звука. Скрипт добавляет лицензии, подписывает приложение локальной ad-hoc подписью, проверяет архитектуру и запуск всех карт, создаёт ZIP, DMG и SHA-256. Для оформления образа используются `dmgbuild` и Swift из Command Line Tools. Игровой профиль сохраняется по прежнему пути.
 
-ZIP предназначен для скачивания и обычного запуска вне App Store. Сборка не нотарифицирована Apple: скачанную копию macOS может предложить разрешить через настройки конфиденциальности и безопасности. Готовые ZIP распространяются через GitHub Releases, каталог `build/` исключён из Git.
+Готовый образ можно повторно собрать без экспорта игры: `build/macos-tools/bin/python godot-car/tools/package_macos_dmg.py`. Сборки распространяются через GitHub Releases вне App Store, каталог `build/` исключён из Git. Для запуска без предупреждения об неизвестном разработчике нужны подпись Developer ID и нотарификация Apple.
 
 ## Скачать и запустить исходники
 

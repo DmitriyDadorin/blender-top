@@ -7,6 +7,7 @@ import plistlib
 import re
 import shutil
 import subprocess
+import sys
 import tempfile
 import zipfile
 from pathlib import Path
@@ -16,6 +17,7 @@ PROJECT = ROOT / "godot-car"
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument("--godot", default=shutil.which("godot") or "/Applications/Godot.app/Contents/MacOS/Godot")
 parser.add_argument("--output", type=Path, default=ROOT / "build" / "macos-arm64")
+parser.add_argument("--dmg", action="store_true", help="Also create a drag-to-Applications DMG (requires tools/requirements-macos.txt).")
 args = parser.parse_args()
 if platform.system() != "Darwin":raise SystemExit("Run this packaging script on macOS with Command Line Tools installed.")
 
@@ -118,3 +120,5 @@ manifest = {"version": version, "architecture": architectures, "minimum_macos": 
 print("MACOS_APP", app)
 print("MACOS_ARCHIVE", archive)
 print("SHA256", digest)
+if args.dmg:
+    run(sys.executable, Path(__file__).with_name("package_macos_dmg.py"), "--output", output)
