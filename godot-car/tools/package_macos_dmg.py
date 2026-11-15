@@ -83,9 +83,22 @@ Contents/Resources/Audio-CREDITS.md и THIRD_PARTY_NOTICES.txt.
         "show_toolbar": False,
         "show_pathbar": False,
         "arrange_by": None,
-        "hide_extensions": ["Drive.app"],
+        # Hiding the app extension adds FinderInfo to the sealed bundle and
+        # breaks strict code-signature validation. Keep the bundle untouched.
     })
 subprocess.run(["hdiutil", "verify", installer], check=True)
+mounted = plistlib.loads(subprocess.check_output([
+    "hdiutil", "attach", "-readonly", "-nobrowse", "-plist", installer,
+]))
+mount = Path(next(item["mount-point"] for item in mounted["system-entities"] if "mount-point" in item))
+try:
+    subprocess.run(["codesign", "--verify", "--deep", "--strict", mount / "Drive.app"], check=True)
+    if (mount / "Applications").readlink() != Path("/Applications"):
+        raise RuntimeError("DMG Applications shortcut is incorrect")
+    if not (mount / "Установка.txt").is_file():
+        raise RuntimeError("DMG setup guide is missing")
+finally:
+    subprocess.run(["hdiutil", "detach", mount], check=True)
 digest = hashlib.sha256(installer.read_bytes()).hexdigest()
 (output / (installer.name + ".sha256")).write_text(digest + "  " + installer.name + "\n")
 manifest = {
