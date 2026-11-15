@@ -8,3 +8,6 @@ __pycache__/
 
 # macOS metadata.
 .DS_Store
+
+# Local application builds and release archives.
+/build/

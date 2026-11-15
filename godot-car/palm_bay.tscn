@@ -1,0 +1,37 @@
+[gd_scene load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://scripts/palm_bay_world.gd" id="1_world"]
+[ext_resource type="Shader" path="res://materials/palm_bay_sky.gdshader" id="2_sky"]
+[sub_resource type="ShaderMaterial" id="SkyMaterial"]
+shader = ExtResource("2_sky")
+[sub_resource type="Sky" id="Sky"]
+sky_material = SubResource("SkyMaterial")
+[sub_resource type="Environment" id="Environment"]
+background_mode = 2
+sky = SubResource("Sky")
+ambient_light_source = 2
+ambient_light_color = Color(0.58, 0.62, 0.82, 1)
+ambient_light_energy = 0.4
+reflected_light_source = 2
+tonemap_mode = 0
+fog_enabled = false
+[sub_resource type="CameraAttributesPractical" id="CameraAttributes"]
+auto_exposure_enabled = false
+
+[node name="PalmBayWorld" type="Node3D"]
+script = ExtResource("1_world")
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment")
+[node name="Sun" type="DirectionalLight3D" parent="."]
+rotation_degrees = Vector3(-16, -110, 0)
+light_color = Color(1, 0.76, 0.56, 1)
+light_energy = 1.05
+shadow_enabled = true
+directional_shadow_max_distance = 220.0
+directional_shadow_pancake_size = 250.0
+shadow_bias = 0.06
+[node name="Camera3D" type="Camera3D" parent="."]
+position = Vector3(-310, 5, 250)
+near = 0.35
+far = 8000.0
+attributes = SubResource("CameraAttributes")

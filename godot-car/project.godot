@@ -11,6 +11,8 @@ config_version=5
 [application]
 
 config/name="Машина — первый проект"
+config/version="0.1.0"
+config/icon="res://assets/drive_icon.svg"
 run/main_scene="res://game.tscn"
 config/features=PackedStringArray("4.7")
 
@@ -28,6 +30,7 @@ common/physics_interpolation=true
 
 renderer/rendering_method="gl_compatibility"
 renderer/rendering_method.mobile="gl_compatibility"
+textures/vram_compression/import_etc2_astc=true
 environment/defaults/default_clear_color=Color(0.16, 0.2, 0.25, 1)
 
 anti_aliasing/quality/msaa_3d=2

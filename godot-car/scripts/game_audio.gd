@@ -183,13 +183,14 @@ func _process(delta:float)->void:
     last_handbrake=handbrake
     mix_drive(car.speed,car.steering,gas,brake,handbrake,car.is_on_floor(),car.enabled,car.is_offroad(),delta)
     var city:bool=game.is_city_map()
-    var coast:float=1-smoothstep(30,320,absf(car.position.x+520)) if city else 0.0
+    var resort:bool=game.selected_map=="palm_bay"
+    var coast:float=1-smoothstep(30,200 if resort else 320,absf(car.position.x+(386 if resort else 520))) if city or resort else 0.0
     var garage:=.65 if game.state==game.RaceState.SELECTING else 1.0
     var night:bool=game.selected_map=="city_night"
-    mix_gain("city_traffic",(.28 if night else .46)*(1-coast*.35)*garage if city else 0.0,delta,.9)
-    mix_gain("ocean_waves",coast*.45*garage,delta,.9)
+    mix_gain("city_traffic",(.28 if night else .46)*(1-coast*.35)*garage if city else .055*garage if resort else 0.0,delta,.9)
+    mix_gain("ocean_waves",coast*(.32 if resort else .45)*garage,delta,.9)
     var wind_speed:=smoothstep(12,34,absf(car.speed))
-    mix_gain("wind",.004+wind_speed*.018 if city else .018+wind_speed*.025,delta,1.5)
+    mix_gain("wind",.004+wind_speed*.018 if city or resort else .018+wind_speed*.025,delta,1.5)
     if city:
         distant_timer-=delta
         if distant_timer<0:
