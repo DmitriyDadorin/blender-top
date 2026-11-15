@@ -31,14 +31,17 @@ func run():
         check(lights.headlamps.size()==2 and lights.lens_materials.size()>=2,"both "+vehicle+" headlamps and actual lens materials are connected")
         check(lights.headlamps[0].position.z< -1.5 and lights.rear_positions[0].z>1.5,"light sources align with the front and rear of "+vehicle)
         check(not lights.headlights_on,"automatic headlights stay off in daylight")
+        check(is_zero_approx(lights.brake_spill[0].light_energy),"stop lamps cast no light before braking")
         car.enabled=true
         car.speed=10
         Input.action_press("reverse")
         await tick()
         check(lights.braking and float(lights.lens_materials[0].get_shader_parameter("brake_energy"))>3,"braking from forward motion lights the stop lenses")
+        check(lights.brake_spill[0].light_energy>.7,"braking illuminates the road behind the car")
         Input.action_release("reverse")
         await tick()
         check(not lights.braking,"releasing brake turns stop lights off")
+        check(is_zero_approx(lights.brake_spill[0].light_energy),"releasing brake clears red light on the road")
         Input.action_press("handbrake")
         await tick()
         check(lights.braking,"handbrake lights stop signals")
@@ -52,10 +55,12 @@ func run():
         Input.action_press("reverse")
         await tick()
         check(not lights.braking and lights.reversing and lights.reverse_lamps[0].visible,"reverse acceleration uses white backup lamps, without false braking")
+        check(lights.reverse_lamps[0].material_override.emission_energy_multiplier>1,"reverse lenses glow only while reversing")
         Input.action_release("reverse")
         car.enabled=false
         car.reset_at(game.map_start())
         check(not lights.braking and not lights.reversing,"reset clears brake and reverse lamps")
+        check(is_zero_approx(lights.reverse_lamps[0].material_override.emission_energy_multiplier),"reset switches off reverse lens emission")
         var sun:DirectionalLight3D=game.get_node("World/Sun")
         var original_sun:=sun.light_energy
         sun.light_energy=0

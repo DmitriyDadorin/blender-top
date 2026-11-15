@@ -6,7 +6,7 @@
 
 ## Готовое приложение для Mac
 
-[Скачать Drive.dmg для Mac — Apple Silicon](https://github.com/DmitriyDadorin/blender-top/releases/download/v0.1.0-macos-arm64/Drive-macOS-arm64-0.1.0.dmg) · [Описание сборки и контрольная сумма](https://github.com/DmitriyDadorin/blender-top/releases/tag/v0.1.0-macos-arm64)
+[Скачать Drive.dmg для Mac — Apple Silicon](https://github.com/DmitriyDadorin/blender-top/releases/download/v0.1.1-macos-arm64/Drive-macOS-arm64-0.1.1.dmg) · [Описание сборки и контрольная сумма](https://github.com/DmitriyDadorin/blender-top/releases/tag/v0.1.1-macos-arm64)
 
 Откройте DMG, перетащите `Drive` на папку `Applications` справа, дождитесь копирования и откройте игру из «Программ». После установки образ можно извлечь.
 

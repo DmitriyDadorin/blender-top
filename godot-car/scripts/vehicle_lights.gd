@@ -68,16 +68,16 @@ func setup(model:Node3D,vehicle:CharacterBody3D) -> void:
         spill.spot_angle=40
         spill.spot_attenuation=1.4
         spill.spot_angle_attenuation=1.5
-        spill.light_energy=.8
+        spill.light_energy=0.0
         spill.shadow_enabled=false
         spill.light_specular=0.0
         add_child(spill)
         brake_spill.append(spill)
         var white:=StandardMaterial3D.new()
-        white.albedo_color=Color(.85,.86,.8)
+        white.albedo_color=Color(.22,.23,.21)
         white.emission_enabled=true
         white.emission=Color(.9,.94,1)
-        white.emission_energy_multiplier=1.2
+        white.emission_energy_multiplier=0.0
         var mesh:=BoxMesh.new()
         mesh.size=Vector3(.09,.045,.013)
         var backup:=MeshInstance3D.new()
@@ -131,8 +131,16 @@ func set_driver_state(brake:bool,reverse:bool)->void:
 
 func update_outputs()->void:
     for lamp in headlamps:lamp.visible=headlights_on
-    for spill in brake_spill:spill.visible=braking
-    for lamp in reverse_lamps:lamp.visible=reversing
+    # Compatibility compiles a new lit shader when a spotlight first becomes
+    # visible. Keep these short-range, shadowless lights paired with geometry
+    # from the garage onward; braking only changes their energy, not the shader.
+    for spill in brake_spill:spill.light_energy=.8 if braking else 0.0
+    # The reverse lens also exists while unlit. Enabling its glow must not
+    # introduce a new emissive material on the first change into reverse.
+    for lamp in reverse_lamps:
+        var material:=lamp.material_override as StandardMaterial3D
+        material.albedo_color=Color(.85,.86,.8) if reversing else Color(.22,.23,.21)
+        material.emission_energy_multiplier=1.2 if reversing else 0.0
     for lens in lens_materials:
         lens.set_shader_parameter("head_energy",3.0 if headlights_on else 0.0)
         lens.set_shader_parameter("tail_energy",.42 if headlights_on else 0.0)
