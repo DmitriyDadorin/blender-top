@@ -8,7 +8,7 @@
 
 ## Готовое приложение для Mac
 
-[Скачать Palmshift.dmg для Mac — Apple Silicon](https://github.com/DmitriyDadorin/blender-top/releases/download/v0.1.2-macos-arm64/Palmshift-macOS-arm64-0.1.2.dmg) · [Описание сборки и контрольная сумма](https://github.com/DmitriyDadorin/blender-top/releases/tag/v0.1.2-macos-arm64)
+[Скачать Palmshift.dmg для Mac — Apple Silicon](https://github.com/DmitriyDadorin/blender-top/releases/download/v0.1.3-macos-arm64/Palmshift-macOS-arm64-0.1.3.dmg) · [Описание сборки и контрольная сумма](https://github.com/DmitriyDadorin/blender-top/releases/tag/v0.1.3-macos-arm64)
 
 Откройте DMG, перетащите `Palmshift` на папку `Applications` справа, дождитесь копирования и откройте игру из «Программ». После установки образ можно извлечь.
 

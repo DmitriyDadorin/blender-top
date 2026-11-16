@@ -55,7 +55,11 @@ class Batch:
     uv.data[li].uv=(v.x*.42,v.y*.42) if poly.material_index==asphalt else (v.x*.05,v.z*.05)
   # Correct winding after axis conversion and keep crisp architecture edges.
   import bmesh
-  bm=bmesh.new();bm.from_mesh(me);bmesh.ops.recalc_face_normals(bm,faces=list(bm.faces));bm.to_mesh(me);bm.free()
+  bm=bmesh.new();bm.from_mesh(me)
+  # Road paint boxes need closed topology before outward normals are computed.
+  # Per-face duplicate vertices otherwise let some top faces point downward.
+  if name=='StreetNetwork':bmesh.ops.remove_doubles(bm,verts=list(bm.verts),dist=.000001)
+  bmesh.ops.recalc_face_normals(bm,faces=list(bm.faces));bm.to_mesh(me);bm.free()
   ob=bpy.data.objects.new(name,me);scene.collection.objects.link(ob);ob.parent=root;return ob
 metadata={'colliders':[],'signals':[],'streets':[-480,-320,-160,0,160,320,480],'extent':580,'building_count':0}
 def collider(p,size):metadata['colliders'].append({'position':p,'size':size})

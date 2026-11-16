@@ -16,6 +16,10 @@ func run(game:Node)->void:
     check(artwork!=null and artwork.get_width()>=1000,"custom startup artwork included in application")
     if DisplayServer.get_name()!="headless":
         check(get_tree().root.title==str(ProjectSettings.get_setting("application/config/name")),"branded native window title")
+    if "--verify-crosswalks" in OS.get_cmdline_user_args():
+        await verify_crosswalks(game)
+        finish()
+        return
     if "--verify-brakes" in OS.get_cmdline_user_args():
         await verify_brakes(game)
         finish()
@@ -92,6 +96,72 @@ func verify_brakes(game:Node)->void:
         metrics[action+"_repeat_peak_ms"]=repeated
         check(repeated<limit,action+" repeated use has no long frame")
     print("BRAKE_FRAME_TIMINGS ",JSON.stringify(metrics))
+
+func crosswalk_samples(image:Image,camera:Camera3D,center:Vector3,basis:Basis)->Dictionary:
+    var roughness:=0.0
+    var contrast:=0.0
+    var samples:=0
+    for stripe in [-5,-3,-1,5]:
+        for dx in [-.25,0.0,.25]:
+            for dz in [-.8,-.4,0.0,.4,.8]:
+                var pixel:=Vector2i(camera.unproject_position(center+basis*Vector3(stripe+dx,.0675,9+dz)))
+                var asphalt:=Vector2i(camera.unproject_position(center+basis*Vector3(stripe+.7,.055,9+dz)))
+                if pixel.x<2 or pixel.x>=image.get_width()-2 or pixel.y<2 or pixel.y>=image.get_height()-2:continue
+                if not Rect2i(Vector2i.ZERO,image.get_size()).has_point(asphalt):continue
+                var color:=image.get_pixelv(pixel)
+                roughness+=absf(color.r-image.get_pixelv(pixel+Vector2i(1,0)).r)
+                contrast+=color.r-image.get_pixelv(asphalt).r
+                samples+=1
+    return {"roughness":roughness/maxi(1,samples),"contrast":contrast/maxi(1,samples),"samples":samples}
+
+func verify_crosswalks(game:Node)->void:
+    if DisplayServer.get_name()=="headless":
+        check(false,"crosswalk verification requires a graphical renderer")
+        return
+    game.audio_director.set_muted(true)
+    game.set_process(false)
+    game.car.set_physics_process(false)
+    metrics={"crosswalk_views":[]}
+    for map_id in ["city","city_night"]:
+        game.state=game.RaceState.SELECTING
+        game.select_map(map_id)
+        game.state=game.RaceState.FINISHED
+        game.camera.fov=68
+        for layer in game.find_children("*","CanvasLayer",true,false):layer.hide()
+        game.get_node("World/Pedestrians").hide()
+        for vehicle in ["tourer","classic"]:
+            game.selected_vehicle=vehicle
+            game.install_vehicle(vehicle)
+            for center in [Vector3(320,0,480),Vector3(-480,0,-480),Vector3(0,0,320)]:
+                for direction in 4:
+                    var yaw:=direction*PI*.5
+                    var basis:=Basis(Vector3.UP,yaw)
+                    var pos:Vector3=center+basis*Vector3(2.5,.055,10)
+                    game.car.reset_at(pos,yaw)
+                    var peak:=0.0
+                    var contrast:=INF
+                    var sample_count:=60
+                    for offset in [0.0,.02]:
+                        game.camera.position=pos+basis*Vector3(offset,3.6,8.8)
+                        game.camera.look_at(pos+basis*Vector3(0,1.3,-7))
+                        for i in 3:
+                            await get_tree().process_frame
+                            await RenderingServer.frame_post_draw
+                        var image:=get_tree().root.get_texture().get_image()
+                        var sample:=crosswalk_samples(image,game.camera,center,basis)
+                        peak=maxf(peak,float(sample.roughness))
+                        contrast=minf(contrast,float(sample.contrast))
+                        sample_count=mini(sample_count,int(sample.samples))
+                        if vehicle=="tourer" and center.x==320 and direction==3 and offset==0.0:
+                            for arg in OS.get_cmdline_user_args():
+                                if arg.begins_with("--verify-crosswalk-screenshot="):
+                                    var path:=arg.trim_prefix("--verify-crosswalk-screenshot=")
+                                    image.save_png(path if map_id=="city" else path.get_basename()+"-night.png")
+                    metrics.crosswalk_views.append({"map":map_id,"vehicle":vehicle,"junction":[center.x,center.z],"direction":direction,"roughness":peak,"contrast":contrast,"samples":sample_count})
+                    check(sample_count>=50 and peak<.04 and contrast>.02,"clean visible crosswalk: %s / %s / %s / heading %d"%[map_id,vehicle,Vector2(center.x,center.z),direction])
+    var worst:=0.0
+    for view in metrics.crosswalk_views:worst=maxf(worst,float(view.roughness))
+    print("CROSSWALK_PIXEL_CHECK views=",metrics.crosswalk_views.size()," worst_roughness=",worst)
 
 func finish()->void:
     var report:={"ok":not failed,"engine":Engine.get_version_info().string,"checks":checks,"metrics":metrics}
