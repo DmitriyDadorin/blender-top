@@ -51,6 +51,8 @@ var speed_label: Label
 var light_status_label:Label
 var audio_director:Node
 var sound_popup:PopupPanel
+var controls_panel:Control
+var controls_back_button:Button
 var mute_checkbox:CheckBox
 var status_label: Label
 var progress_label: Label
@@ -111,6 +113,7 @@ func _ready() -> void:
 	add_child(audio_director)
 	audio_director.setup(self)
 	create_sound_panel()
+	create_controls_panel()
 	get_window().size_changed.connect(update_screen_buttons)
 	update_screen_buttons()
 	if skip_selection: start_race()
@@ -153,6 +156,10 @@ func update_screen_buttons()->void:
 	for control in screen_buttons:control.text=text
 
 func _input(event:InputEvent)->void:
+	if is_instance_valid(controls_panel) and controls_panel.visible and event.is_action_pressed("pause_game") and not event.is_echo():
+		controls_panel.hide()
+		get_viewport().set_input_as_handled()
+		return
 	if event.is_action_pressed("toggle_fullscreen") and not event.is_echo():
 		toggle_fullscreen()
 		get_viewport().set_input_as_handled()
@@ -291,13 +298,6 @@ func create_hud() -> void:
 	light_status_label=label("",16,Color(.62,.9,.73))
 	canvas.add_child(light_status_label)
 	light_status_label.position=Vector2(26,146)
-	var help := label("W / ↑ — газ    S / ↓ — тормоз, задний ход\nA D / ← → — руль    Пробел — ручник\nR — на дорогу (+5 с)    H — сигнал    M — звук    Esc — пауза\nF11 / Alt+Enter — полный экран",17)
-	canvas.add_child(help)
-	help.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_LEFT)
-	help.offset_left = 24
-	help.offset_top = -122
-	help.offset_right = 720
-	help.offset_bottom = -20
 	message_label = label("",22,Color(1,.77,.36))
 	canvas.add_child(message_label)
 	message_label.position = Vector2(24,177)
@@ -319,14 +319,17 @@ func create_hud() -> void:
 	result_box.add_child(result_label)
 	result_box.add_child(button("В гараж  ·  Enter",restart))
 	result_panel.hide()
-	pause_panel = panel(canvas,Vector2(350,240),Vector2(400,320))
-	center_panel(pause_panel,Vector2(400,320))
+	pause_panel = panel(canvas,Vector2(350,210),Vector2(400,380))
+	center_panel(pause_panel,Vector2(400,380))
 	var pause_box := VBoxContainer.new()
 	pause_box.add_theme_constant_override("separation",14)
 	pause_panel.add_child(pause_box)
 	pause_box.add_child(label("ПАУЗА",32))
 	pause_box.add_child(button("Продолжить  ·  Esc",toggle_pause))
 	pause_box.add_child(screen_button())
+	var controls_button:=button("Управление",show_controls_panel)
+	controls_button.focus_mode=Control.FOCUS_NONE
+	pause_box.add_child(controls_button)
 	pause_box.add_child(button("Звук",show_sound_panel))
 	pause_box.add_child(button("В гараж",restart))
 	pause_panel.hide()
@@ -343,6 +346,7 @@ func create_hud() -> void:
 	mini_map.visible=is_route_map()
 
 func _unhandled_input(event: InputEvent) -> void:
+	if is_instance_valid(controls_panel) and controls_panel.visible:return
 	if event.is_action_pressed("mute_audio") and not event.is_echo():
 		audio_director.set_muted(not audio_director.muted)
 		mute_checkbox.set_pressed_no_signal(audio_director.muted)
@@ -560,6 +564,10 @@ func create_garage() -> void:
 	var title:=label(game_title+"  /  ГАРАЖ",30,Color(1,.72,.37))
 	title.size_flags_horizontal=Control.SIZE_EXPAND_FILL
 	title_row.add_child(title)
+	var controls_button:=button("Управление",show_controls_panel)
+	controls_button.custom_minimum_size=Vector2(170,44)
+	controls_button.focus_mode=Control.FOCUS_NONE
+	title_row.add_child(controls_button)
 	var display_button:=screen_button()
 	display_button.custom_minimum_size=Vector2(260,44)
 	title_row.add_child(display_button)
@@ -608,6 +616,60 @@ func create_garage() -> void:
 	content.add_child(label("Q / E / N / P — карта     ← → — машина     Enter — начать заезд",16,Color(.7,.76,.75)))
 	update_garage()
 
+
+func show_controls_panel()->void:
+	controls_panel.show()
+	controls_back_button.grab_focus()
+
+func create_controls_panel()->void:
+	var layer:=CanvasLayer.new()
+	layer.layer=20
+	add_child(layer)
+	controls_panel=Control.new()
+	controls_panel.name="ControlsHelp"
+	layer.add_child(controls_panel)
+	controls_panel.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	controls_panel.mouse_filter=Control.MOUSE_FILTER_STOP
+	var shade:=ColorRect.new()
+	shade.color=Color(0,.01,.02,.65)
+	controls_panel.add_child(shade)
+	shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	var card:=panel(controls_panel,Vector2.ZERO,Vector2(620,530))
+	center_panel(card,Vector2(620,530))
+	var content:=VBoxContainer.new()
+	content.add_theme_constant_override("separation",12)
+	card.add_child(content)
+	content.add_child(label("УПРАВЛЕНИЕ",26,Color(1,.72,.37)))
+	var grid:=GridContainer.new()
+	grid.columns=2
+	grid.add_theme_constant_override("h_separation",24)
+	grid.add_theme_constant_override("v_separation",7)
+	content.add_child(grid)
+	for row in [
+		["W / ↑","Газ"],
+		["S / ↓","Тормоз и задний ход"],
+		["A D / ← →","Поворот"],
+		["Пробел","Ручник"],
+		["R","Возврат на дорогу (+5 с)"],
+		["H","Звуковой сигнал"],
+		["M","Включить / выключить звук"],
+		["Esc","Пауза"],
+		["Q / E / N / P","Выбор карты в гараже"],
+		["← / →","Выбор машины в гараже"],
+		["Enter","Старт / гараж после финиша"],
+		["Alt/Option + Enter / F11","Полный экран / окно"]
+	]:
+		grid.add_child(label(row[0],18))
+		grid.add_child(label(row[1],18,Color(.75,.82,.84)))
+	controls_back_button=button("Назад · Esc",controls_panel.hide)
+	content.add_child(controls_back_button)
+	controls_back_button.focus_next=NodePath(".")
+	controls_back_button.focus_previous=NodePath(".")
+	controls_back_button.focus_neighbor_left=NodePath(".")
+	controls_back_button.focus_neighbor_right=NodePath(".")
+	controls_back_button.focus_neighbor_top=NodePath(".")
+	controls_back_button.focus_neighbor_bottom=NodePath(".")
+	controls_panel.hide()
 
 func show_sound_panel() -> void:
 	mute_checkbox.set_pressed_no_signal(audio_director.muted)
