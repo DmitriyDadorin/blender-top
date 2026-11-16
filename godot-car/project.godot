@@ -10,9 +10,17 @@ config_version=5
 
 [application]
 
-config/name="Машина — первый проект"
-config/version="0.1.1"
+config/name="Palmshift"
+config/version="0.1.2"
+config/description="Побережье, пустыня и ночной город — поездки в атмосфере вечного лета."
+config/use_custom_user_dir=true
+config/custom_user_dir_name="Godot/app_userdata/Машина — первый проект"
 config/icon="res://assets/drive_icon.svg"
+boot_splash/image="res://assets/palmshift_splash.png"
+boot_splash/bg_color=Color(0.075,0.065,0.16,1)
+boot_splash/fullsize=true
+boot_splash/use_filter=true
+boot_splash/minimum_display_time=1200
 run/main_scene="res://game.tscn"
 config/features=PackedStringArray("4.7")
 

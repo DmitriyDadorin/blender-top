@@ -1,4 +1,4 @@
-"""Package an existing Drive.app as a drag-to-Applications disk image on macOS."""
+"""Package the branded application as a drag-to-Applications disk image on macOS."""
 import argparse
 import hashlib
 import json
@@ -7,6 +7,7 @@ import plistlib
 import subprocess
 import tempfile
 from pathlib import Path
+from macos_branding import read_branding
 
 try:
     import dmgbuild
@@ -21,7 +22,10 @@ if platform.system() != "Darwin":
     raise SystemExit("Run this script on macOS.")
 
 output = args.output.resolve()
-app = output / "Drive" / "Drive.app"
+branding = read_branding(ROOT / "godot-car" / "project.godot")
+app_name = branding["file_name"]
+display_name = branding["display_name"]
+app = output / app_name / (app_name + ".app")
 with (app / "Contents" / "Info.plist").open("rb") as file:
     info = plistlib.load(file)
 version = info["CFBundleShortVersionString"]
@@ -31,30 +35,32 @@ if architectures != "arm64":
     raise SystemExit("Expected a native arm64 application, got " + architectures)
 subprocess.run(["codesign", "--verify", "--deep", "--strict", app], check=True)
 
-installer = output / f"Drive-macOS-arm64-{version}.dmg"
+installer = output / f"{app_name}-macOS-arm64-{version}.dmg"
 with tempfile.TemporaryDirectory(prefix="drive-dmg-") as temporary:
     staging = Path(temporary)
     background = staging / "background.png"
-    subprocess.run(["swift", Path(__file__).with_name("dmg_background.swift"), background], check=True)
+    subprocess.run(["swift", Path(__file__).with_name("dmg_background.swift"), background, display_name], check=True)
     instructions = staging / "Установка.txt"
-    instructions.write_text("""DRIVE — установка для Mac
+    instructions.write_text(f"""{display_name.upper()} — установка для Mac
 
 Требования: Apple Silicon (M1 и новее), macOS 13+.
 
-1. Перетащите Drive в папку Applications («Программы») справа.
-2. Дождитесь окончания копирования и извлеките образ Drive.
-3. Откройте Drive из папки «Программы».
+1. Перетащите {display_name} в папку Applications («Программы») справа.
+2. Дождитесь окончания копирования и извлеките образ {display_name}.
+3. Откройте {display_name} из папки «Программы».
+Если установлена старая версия Drive, её можно удалить после закрытия.
+Рекорды и настройки сохраняются в прежнем профиле игры.
 Godot и Blender для запуска не требуются.
 
-ЕСЛИ macOS НЕ ОТКРЫВАЕТ DRIVE
+ЕСЛИ macOS НЕ ОТКРЫВАЕТ {display_name.upper()}
 
 Эта сборка имеет локальную ad-hoc подпись, но не нотарифицирована Apple.
 Формат DMG сам по себе не отменяет проверку разработчика в macOS.
 Для этой известной вам сборки можно разрешить запуск отдельно:
 
-1. Попробуйте открыть Drive в «Программах» и закройте предупреждение.
+1. Попробуйте открыть {display_name} в «Программах» и закройте предупреждение.
 2. Откройте «Системные настройки» → «Конфиденциальность и безопасность».
-3. В разделе «Безопасность» найдите блокировку Drive и нажмите
+3. В разделе «Безопасность» найдите блокировку {display_name} и нажмите
    «Открыть всё равно», затем подтвердите открытие.
 
 Официальная инструкция Apple: https://support.apple.com/102445
@@ -64,10 +70,10 @@ WASD / стрелки — движение; пробел — ручник; Enter
 Esc — пауза и гараж; R — возврат на дорогу; H — сигнал; M — звук.
 В гараже: Q — пустыня, E — город, N — ночной город, P — Palm Bay.
 
-Авторы звуков и лицензии: Drive.app → «Показать содержимое пакета» →
+Авторы звуков и лицензии: {app_name}.app → «Показать содержимое пакета» →
 Contents/Resources/Audio-CREDITS.md и THIRD_PARTY_NOTICES.txt.
 """, encoding="utf-8")
-    dmgbuild.build_dmg(str(installer), "Drive", settings={
+    dmgbuild.build_dmg(str(installer), display_name, settings={
         "format": "UDZO",
         "compression_level": 9,
         "files": [str(app), str(instructions)],
@@ -75,7 +81,7 @@ Contents/Resources/Audio-CREDITS.md и THIRD_PARTY_NOTICES.txt.
         "icon": str(app / "Contents" / "Resources" / "icon.icns"),
         "background": str(background),
         "window_rect": ((160, 120), (700, 500)),
-        "icon_locations": {"Drive.app": (180, 225), "Applications": (520, 225), "Установка.txt": (350, 405)},
+        "icon_locations": {app_name + ".app": (180, 225), "Applications": (520, 225), "Установка.txt": (350, 405)},
         "icon_size": 96,
         "text_size": 15,
         "show_status_bar": False,
@@ -92,7 +98,7 @@ mounted = plistlib.loads(subprocess.check_output([
 ]))
 mount = Path(next(item["mount-point"] for item in mounted["system-entities"] if "mount-point" in item))
 try:
-    subprocess.run(["codesign", "--verify", "--deep", "--strict", mount / "Drive.app"], check=True)
+    subprocess.run(["codesign", "--verify", "--deep", "--strict", mount / (app_name + ".app")], check=True)
     if (mount / "Applications").readlink() != Path("/Applications"):
         raise RuntimeError("DMG Applications shortcut is incorrect")
     if not (mount / "Установка.txt").is_file():

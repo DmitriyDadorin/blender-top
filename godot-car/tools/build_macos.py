@@ -4,13 +4,13 @@ import hashlib
 import json
 import platform
 import plistlib
-import re
 import shutil
 import subprocess
 import sys
 import tempfile
 import zipfile
 from pathlib import Path
+from macos_branding import read_branding
 
 ROOT = Path(__file__).resolve().parents[2]
 PROJECT = ROOT / "godot-car"
@@ -52,11 +52,14 @@ def prepare_arm64_templates():
             for entry, content in additions:destination.writestr(entry, content)
         print("Prepared native arm64 export template slices")
 
-version = re.search(r'config/version="([^"]+)"', (PROJECT / "project.godot").read_text()).group(1)
+branding = read_branding(PROJECT / "project.godot")
+version = branding["version"]
+app_name = branding["file_name"]
+display_name = branding["display_name"]
 output = args.output.resolve()
-payload = output / "Drive"
+payload = output / app_name
 payload.mkdir(parents=True, exist_ok=True)
-app = payload / "Drive.app"
+app = payload / (app_name + ".app")
 prepare_arm64_templates()
 run(args.godot, "--headless", "--path", PROJECT, "--editor", "--import", "--quit")
 run(args.godot, "--headless", "--path", PROJECT, "--export-release", "macOS Apple Silicon", app)
@@ -64,13 +67,13 @@ run(args.godot, "--headless", "--path", PROJECT, "--export-release", "macOS Appl
 plist_path = app / "Contents" / "Info.plist"
 with plist_path.open("rb") as file:info = plistlib.load(file)
 old_executable = app / "Contents" / "MacOS" / info["CFBundleExecutable"]
-native_executable = old_executable.with_name("Drive")
+native_executable = old_executable.with_name(app_name)
 if old_executable != native_executable:old_executable.rename(native_executable)
 old_pack = app / "Contents" / "Resources" / (info["CFBundleExecutable"] + ".pck")
-if old_pack.exists():old_pack.rename(old_pack.with_name("Drive.pck"))
-info["CFBundleExecutable"] = "Drive"
-info["CFBundleName"] = "Drive"
-info["CFBundleDisplayName"] = "Drive"
+if old_pack.exists():old_pack.rename(old_pack.with_name(app_name + ".pck"))
+info["CFBundleExecutable"] = app_name
+info["CFBundleName"] = display_name
+info["CFBundleDisplayName"] = display_name
 with plist_path.open("wb") as file:plistlib.dump(info, file, sort_keys=False)
 executable = app / "Contents" / "MacOS" / info["CFBundleExecutable"]
 architectures = subprocess.check_output(["lipo", "-archs", str(executable)], text=True).strip()
@@ -82,10 +85,10 @@ credits = PROJECT / "audio" / "CREDITS.md"
 shutil.copy2(credits, app / "Contents" / "Resources" / "Audio-CREDITS.md")
 shutil.copy2(credits, payload / "Audio-CREDITS.md")
 shutil.copy2(notices, payload / "THIRD_PARTY_NOTICES.txt")
-(payload / "README.txt").write_text("""DRIVE — macOS / Apple Silicon
+(payload / "README.txt").write_text(f"""{display_name.upper()} — macOS / Apple Silicon
 
 Требования: Mac с процессором Apple Silicon, macOS 13 или новее.
-Распакуйте архив, перенесите Drive.app в «Программы» и откройте приложение.
+Распакуйте архив, перенесите {app_name}.app в «Программы» и откройте приложение.
 Godot и Blender для запуска не требуются.
 
 Управление:
@@ -97,7 +100,7 @@ Enter — старт; Esc — пауза и выход в гараж; H — си
 в пользовательском профиле игры; приложение не записывает данные внутрь .app.
 
 Сборка имеет локальную ad-hoc подпись и не нотарифицирована Apple.
-При блокировке скачанной копии используйте «Открыть всё равно» для Drive
+При блокировке скачанной копии используйте «Открыть всё равно» для {display_name}
 в системных настройках конфиденциальности и безопасности macOS.
 Для публичного выпуска с нотарификацией нужны Developer ID и учётная запись Apple Developer.
 
@@ -111,7 +114,7 @@ with tempfile.TemporaryDirectory(prefix="drive-export-check-") as empty_director
     report = output / "verification-headless.json"
     subprocess.run([str(executable), "--headless", "--log-file", str(output / "verification-headless.log"), "--", "--verify-export", "--verify-report=" + str(report)], cwd=empty_directory, check=True, timeout=120)
     if not report.exists() or not json.loads(report.read_text())["ok"]:raise RuntimeError("Packaged application verification failed")
-archive = output / ("Drive-macOS-arm64-" + version + ".zip")
+archive = output / (app_name + "-macOS-arm64-" + version + ".zip")
 run("ditto", "-c", "-k", "--sequesterRsrc", "--keepParent", payload, archive)
 digest = hashlib.sha256(archive.read_bytes()).hexdigest()
 (output / (archive.name + ".sha256")).write_text(digest + "  " + archive.name + "\n")

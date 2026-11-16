@@ -1,4 +1,4 @@
-# Машина для Godot
+# Palmshift — документация игры
 
 ## Palm Bay — четвёртая карта
 
@@ -238,7 +238,7 @@ GPU-проверка `godot --path . --script res://tools/test_streetlight_stabi
 Проверка времени кадров именно в собранном приложении (из корня репозитория):
 
 ```sh
-build/macos-arm64/Drive/Drive.app/Contents/MacOS/Drive -- --verify-export --verify-brakes --verify-map=palm_bay --verify-vehicle=tourer --verify-report=/tmp/drive-brakes.json
+build/macos-arm64/Palmshift/Palmshift.app/Contents/MacOS/Palmshift -- --verify-export --verify-brakes --verify-map=palm_bay --verify-vehicle=tourer --verify-report=/tmp/drive-brakes.json
 ```
 
 Проверка требует графического запуска, сравнивает обычные кадры с первым и повторным нажатием ручника / заднего хода на скорости, а также проверяет переход к движению назад. Доступны все четыре карты и обе машины; пользовательские рекорды и настройки не записываются.
@@ -281,3 +281,9 @@ godot --path . --script res://tools/test_headlight_stability.gd
 ```sh
 godot --headless --path . --script res://tools/test_fleet_audio.gd
 ```
+
+## Название и заставка
+
+Начиная с 0.1.2 игра называется Palmshift. Имя берётся из `application/config/name`; инструменты сборки используют его для приложения, исполняемого файла, ZIP и DMG. Стартовая иллюстрация — `assets/palmshift_splash.png`, настройки — `application/boot_splash/*`. [Промпт и происхождение изображения](assets/palmshift_splash_prompt.md).
+
+Для сохранения рекордов и настроек после переименования `application/config/custom_user_dir_name` закреплён на `Godot/app_userdata/Машина — первый проект`. На macOS путь `user://` совпадает с прежней версией Drive. Проверка собранного приложения подтверждает путь профиля, наличие иллюстрации и заголовок окна.

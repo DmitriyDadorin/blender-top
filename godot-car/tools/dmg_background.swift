@@ -2,6 +2,7 @@ import AppKit
 
 // Finder window artwork; application icons and labels are placed by dmgbuild.
 let size = NSSize(width: 700, height: 500)
+let title = CommandLine.arguments.count > 2 ? CommandLine.arguments[2] : "Drive"
 let image = NSImage(size: size)
 image.lockFocus()
 NSColor(calibratedRed: 0.96, green: 0.95, blue: 0.92, alpha: 1).setFill()
@@ -15,11 +16,11 @@ func text(_ value: String, _ x: CGFloat, _ top: CGFloat, _ fontSize: CGFloat, _ 
     let bounds = string.size(withAttributes: attributes)
     string.draw(at: NSPoint(x: x, y: size.height - top - bounds.height), withAttributes: attributes)
 }
-text("DRIVE", 38, 24, 34, .white, bold: true)
-text("Перетащите Drive в папку «Программы»", 40, 75, 19, .white)
+text(title.uppercased(), 38, 24, 34, .white, bold: true)
+text("Перетащите \(title) в папку «Программы»", 40, 75, 19, .white)
 let ink = NSColor(calibratedRed: 0.12, green: 0.22, blue: 0.29, alpha: 1)
 text("→", 317, 190, 57, ink)
-text("После копирования откройте Drive из «Программ».", 90, 310, 17, ink)
+text("После копирования откройте \(title) из «Программ».", 75, 310, 17, ink)
 text("Если macOS блокирует запуск, прочитайте «Установка.txt».", 107, 340, 13, ink)
 image.unlockFocus()
 let bitmap = NSBitmapImageRep(data: image.tiffRepresentation!)!

@@ -11,6 +11,11 @@ func run(game:Node)->void:
     check(OS.get_name()=="macOS" and OS.has_feature("arm64"),"native Apple Silicon runtime")
     check(not OS.has_feature("editor"),"export template runtime")
     check(FileAccess.file_exists("res://assets/pacific_city.json") and FileAccess.file_exists("res://assets/palm_bay.json"),"packed collision metadata")
+    check(OS.get_user_data_dir()==OS.get_data_dir().path_join("Godot/app_userdata/Машина — первый проект"),"legacy profile directory preserved after rename")
+    var artwork:=load(ProjectSettings.get_setting("application/boot_splash/image")) as Texture2D
+    check(artwork!=null and artwork.get_width()>=1000,"custom startup artwork included in application")
+    if DisplayServer.get_name()!="headless":
+        check(get_tree().root.title==str(ProjectSettings.get_setting("application/config/name")),"branded native window title")
     if "--verify-brakes" in OS.get_cmdline_user_args():
         await verify_brakes(game)
         finish()
