@@ -11,7 +11,7 @@ config_version=5
 [application]
 
 config/name="Palmshift"
-config/version="0.1.3"
+config/version="0.1.4"
 config/description="Побережье, пустыня и ночной город — поездки в атмосфере вечного лета."
 config/use_custom_user_dir=true
 config/custom_user_dir_name="Godot/app_userdata/Машина — первый проект"
@@ -28,7 +28,9 @@ config/features=PackedStringArray("4.7")
 
 window/size/viewport_width=1100
 window/size/viewport_height=800
+window/size/mode=3
 window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
 
 [physics]
 

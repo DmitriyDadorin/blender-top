@@ -8,9 +8,9 @@
 
 ## Готовое приложение для Mac
 
-[Скачать Palmshift.dmg для Mac — Apple Silicon](https://github.com/DmitriyDadorin/blender-top/releases/download/v0.1.3-macos-arm64/Palmshift-macOS-arm64-0.1.3.dmg) · [Описание сборки и контрольная сумма](https://github.com/DmitriyDadorin/blender-top/releases/tag/v0.1.3-macos-arm64)
+[Скачать Palmshift.dmg для Mac — Apple Silicon](https://github.com/DmitriyDadorin/blender-top/releases/download/v0.1.4-macos-arm64/Palmshift-macOS-arm64-0.1.4.dmg) · [Описание сборки и контрольная сумма](https://github.com/DmitriyDadorin/blender-top/releases/tag/v0.1.4-macos-arm64)
 
-Откройте DMG, перетащите `Palmshift` на папку `Applications` справа, дождитесь копирования и откройте игру из «Программ». После установки образ можно извлечь.
+Откройте DMG, перетащите `Palmshift` на папку `Applications` справа, дождитесь копирования и откройте игру из «Программ». После установки образ можно извлечь. Игра открывается на весь экран. **Alt/Option + Enter** или **F11** переключает полный экран и окно; кнопки переключения есть в гараже и паузе.
 
 **Первый запуск:** эта сборка не нотарифицирована Apple. Если macOS пишет, что не может проверить Palmshift, закройте предупреждение, откройте «Системные настройки → Конфиденциальность и безопасность» и разрешите Palmshift через «Открыть всё равно». DMG не отменяет эту проверку. [Инструкция Apple](https://support.apple.com/102445). Подробная инструкция также находится внутри образа в `Установка.txt`.
 

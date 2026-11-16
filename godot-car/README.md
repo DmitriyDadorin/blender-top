@@ -149,7 +149,7 @@ godot --headless --fixed-fps 60 --path . --script res://tools/test_city_horizon.
 Мерцание прибрежной полосы устранено: асфальт отсекается по сухопутному краю набережной, а не по её морскому краю. Это удаляет совпадающие поверхности на высоте 0,055 м. Граница материала передаётся параметром `coast_cutoff` из `PROMENADE_LAND_EDGE_X`. Регрессия проверяет границу геометрии и сравнивает цвета покрытия при малых движениях камеры:
 
 ```sh
-godot --path . --script res://tools/test_coast_render.gd
+godot --windowed --resolution 1100x800 --path . --script res://tools/test_coast_render.gd
 ```
 
 Для проверки изображения нужен обычный графический запуск.
@@ -164,7 +164,7 @@ godot --path . --script res://tools/test_coast_render.gd
 
 ```sh
 godot --headless --path . --script res://tools/test_city_windows.gd
-godot --path . --script res://tools/test_windows_render.gd
+godot --windowed --resolution 1100x800 --path . --script res://tools/test_windows_render.gd
 ```
 
 ## Стекло и солнечные отблески
@@ -176,7 +176,7 @@ godot --path . --script res://tools/test_windows_render.gd
 После изменения застройки атласы можно обновить с графическим рендерером:
 
 ```sh
-godot --path . --script res://tools/bake_city_reflections.gd
+godot --windowed --resolution 1100x800 --path . --script res://tools/bake_city_reflections.gd
 godot --headless --path . --editor --import --quit
 ```
 
@@ -185,7 +185,7 @@ godot --headless --path . --editor --import --quit
 Графическая проверка реакции стекла на солнечный свет:
 
 ```sh
-godot --path . --script res://tools/test_glass_light.gd
+godot --windowed --resolution 1100x800 --path . --script res://tools/test_glass_light.gd
 ```
 
 Проверка мерцания ждёт завершения однократных отражений из тестового ракурса перед измерением.
@@ -210,7 +210,7 @@ godot --headless --fixed-fps 60 --path . --script res://tools/test_city_life.gd
 GPU-проверка сравнивает тени обеих машин на солнце и внутри тени зданий с контрольным кадром без тени автомобиля. Вариант `-- baseline` воспроизводит прежнее значение 20 м и должен завершаться с ошибкой покрытия дороги:
 
 ```sh
-godot --path . --script res://tools/test_city_shadows.gd
+godot --windowed --resolution 1100x800 --path . --script res://tools/test_city_shadows.gd
 ```
 
 ## Детализация людей, автомобилей и деревьев
@@ -227,11 +227,11 @@ godot --path . --script res://tools/test_city_shadows.gd
 
 Источники уличного света сохраняют привязку к фонарям, пока нужны рядом с машиной. При смене ближайшего набора старый свет плавно гаснет, переносится только после полностью тёмного кадра и плавно включается в новой позиции. Небольшой запас в выборе расстояния предотвращает частое переключение на перекрёстках. Это устраняет вспышки на боковых объектах при движении по прямой; бюджет остаётся равным четырём источникам.
 
-GPU-проверка `godot --path . --script res://tools/test_streetlight_stability.gd` воспроизводит проезд и измеряет освещение неподвижных контрольных поверхностей у обочины. До исправления она обнаруживала 14 переносов включённых источников и максимальный скачок яркости 0,192; после — 0 переносов включённых источников и скачок 0,018.
+GPU-проверка `godot --windowed --resolution 1100x800 --path . --script res://tools/test_streetlight_stability.gd` воспроизводит проезд и измеряет освещение неподвижных контрольных поверхностей у обочины. До исправления она обнаруживала 14 переносов включённых источников и максимальный скачок яркости 0,192; после — 0 переносов включённых источников и скачок 0,018.
 
 Обе управляемые машины имеют `VehicleLights` внутри визуальной модели. Шейдер `vehicle_lens.gdshader` управляет существующими плафонами, два SpotLight дают ближний свет с тенями, стоп-сигналы добавляют красный свет рядом с кормой. S / ↓ зажигает стоп-сигналы при торможении вперёд, W — при торможении заднего хода, пробел — при ручном тормозе. При движении задним ходом включаются белые фонари. В тёмной среде ближний свет и габариты включаются автоматически; задержка 0,7 с и разные пороги включения / выключения предотвращают дребезг. Переключение карты сразу обновляет состояние AUTO.
 
-Красный свет стоп-сигналов направлен назад и вниз двумя небольшими SpotLight. Он подсвечивает дорогу позади машины, а не кузов и окна. GPU-проверка `godot --path . --script res://tools/test_brake_spill.gd` сравнивает стоп-сигналы, кузов, боковые панели и дорожное пятно обеих моделей при нажатии тормоза.
+Красный свет стоп-сигналов направлен назад и вниз двумя небольшими SpotLight. Он подсвечивает дорогу позади машины, а не кузов и окна. GPU-проверка `godot --windowed --resolution 1100x800 --path . --script res://tools/test_brake_spill.gd` сравнивает стоп-сигналы, кузов, боковые панели и дорожное пятно обеих моделей при нажатии тормоза.
 
 Начиная с 0.1.1 источники стоп-сигналов остаются в сцене с нулевой энергией до торможения. При нажатии S или пробела меняется только энергия света: Compatibility заранее готовит нужный вариант шейдера при показе гаража. Это устраняет разовую задержку при первом торможении. Плафоны заднего хода тоже постоянно присутствуют в модели; их свечение включается параметром материала.
 
@@ -247,9 +247,9 @@ build/macos-arm64/Palmshift/Palmshift.app/Contents/MacOS/Palmshift -- --verify-e
 
 ```sh
 godot --headless --fixed-fps 60 --path . --script res://tools/test_vehicle_lights.gd
-godot --path . --script res://tools/test_night_render.gd
+godot --windowed --resolution 1100x800 --path . --script res://tools/test_night_render.gd
 godot --headless --fixed-fps 60 --path . --script res://tools/test_city.gd -- night tourer
-godot --path . --script res://tools/bake_city_reflections.gd -- night
+godot --windowed --resolution 1100x800 --path . --script res://tools/bake_city_reflections.gd -- night
 ```
 
 ## Мерцающие полосы в свете фар
@@ -259,7 +259,7 @@ godot --path . --script res://tools/bake_city_reflections.gd -- night
 GPU-регрессия отслеживает освещённый фасад при движении обеих машин. Запуск с `-- baseline` включает прежнюю точность и воспроизводит ошибку:
 
 ```sh
-godot --path . --script res://tools/test_headlight_stability.gd
+godot --windowed --resolution 1100x800 --path . --script res://tools/test_headlight_stability.gd
 ```
 
 ## Морской флот и звук
@@ -295,7 +295,21 @@ godot --headless --path . --script res://tools/test_fleet_audio.gd
 GPU-проверка сравнивает соседние пиксели внутри белых полос, проверяет их контраст с асфальтом и меняет ракурс на трёх перекрёстках для обеих машин днём и ночью:
 
 ```sh
-godot --path . --script res://tools/test_crosswalks_render.gd
+godot --windowed --resolution 1100x800 --path . --script res://tools/test_crosswalks_render.gd
 ```
 
 Повторить ремонт существующего Blender-файла можно командой `Blender --background pacific_city.blend --python godot-car/tools/fix_city_road_normals.py` из корня репозитория. В готовом приложении GPU-проверка запускается аргументами `-- --verify-export --verify-crosswalks --verify-report=/tmp/palmshift-crosswalks.json`.
+
+## Полный экран и разные пропорции мониторов
+
+В 0.1.4 игра по умолчанию открывается на весь экран. Переключение: **Alt/Option + Enter**, **F11** или кнопка в гараже / паузе. Сочетание с Enter обрабатывается до игровых клавиш и не запускает заезд. Режим окна сохраняется при возврате в гараж в течение запуска приложения.
+
+`display/window/stretch/aspect="expand"` расширяет видимую область под пропорции окна и убирает чёрные поля по бокам. Базовый размер интерфейса 1100×800 сохранён для масштаба текста. Гараж привязан к верхнему и нижнему краям, спидометр и мини-карта — к правому краю, финиш и пауза — к центру.
+
+Графическая проверка пяти пропорций окна, заполнения кадра, положения интерфейса и переключения режима:
+
+```sh
+godot --windowed --path . --script res://tools/test_display.gd
+```
+
+В готовом приложении: `--windowed -- --verify-export --verify-display --verify-report=/tmp/palmshift-display.json`. Дополнительный аргумент `--verify-display-screenshots=/tmp/palmshift-display` сохраняет снимки гаража и финиша для каждого размера.

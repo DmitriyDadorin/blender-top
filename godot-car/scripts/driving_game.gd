@@ -61,6 +61,7 @@ var result_label: Label
 var pause_panel: PanelContainer
 var message_timer := 0.0
 var camera_initialized := false
+var screen_buttons:Array[Button]=[]
 
 func _ready() -> void:
 	if "--verify-export" in OS.get_cmdline_user_args():
@@ -110,6 +111,8 @@ func _ready() -> void:
 	add_child(audio_director)
 	audio_director.setup(self)
 	create_sound_panel()
+	get_window().size_changed.connect(update_screen_buttons)
+	update_screen_buttons()
 	if skip_selection: start_race()
 	else: hud_root.hide()
 	update_camera(1.0)
@@ -125,7 +128,7 @@ func bind_inputs() -> void:
 		"steer_left": [KEY_A, KEY_LEFT], "steer_right": [KEY_D, KEY_RIGHT],
 		"handbrake": [KEY_SPACE], "recover": [KEY_R],
 		"pause_game": [KEY_ESCAPE], "restart_race": [KEY_ENTER],
-		"map_desert": [KEY_Q], "map_city": [KEY_E], "map_night": [KEY_N], "map_palm": [KEY_P], "horn": [KEY_H], "mute_audio": [KEY_M]
+		"map_desert": [KEY_Q], "map_city": [KEY_E], "map_night": [KEY_N], "map_palm": [KEY_P], "horn": [KEY_H], "mute_audio": [KEY_M], "toggle_fullscreen": [KEY_F11]
 	}
 	for action in bindings:
 		if not InputMap.has_action(action): InputMap.add_action(action)
@@ -133,6 +136,26 @@ func bind_inputs() -> void:
 			var event := InputEventKey.new()
 			event.physical_keycode = key
 			if not InputMap.action_has_event(action, event): InputMap.action_add_event(action, event)
+	var screen_key:=InputEventKey.new()
+	screen_key.physical_keycode=KEY_ENTER
+	screen_key.alt_pressed=true
+	if not InputMap.action_has_event("toggle_fullscreen",screen_key):InputMap.action_add_event("toggle_fullscreen",screen_key)
+
+func is_fullscreen()->bool:
+	return get_window().mode in [Window.MODE_FULLSCREEN,Window.MODE_EXCLUSIVE_FULLSCREEN]
+
+func toggle_fullscreen()->void:
+	get_window().mode=Window.MODE_WINDOWED if is_fullscreen() else Window.MODE_FULLSCREEN
+	update_screen_buttons.call_deferred()
+
+func update_screen_buttons()->void:
+	var text:=("В окно" if is_fullscreen() else "На весь экран")+" · Alt+Enter"
+	for control in screen_buttons:control.text=text
+
+func _input(event:InputEvent)->void:
+	if event.is_action_pressed("toggle_fullscreen") and not event.is_echo():
+		toggle_fullscreen()
+		get_viewport().set_input_as_handled()
 
 func make_material(color: Color) -> StandardMaterial3D:
 	var mat := StandardMaterial3D.new()
@@ -227,6 +250,20 @@ func button(text: String, callback: Callable) -> Button:
 	node.pressed.connect(callback)
 	return node
 
+func screen_button()->Button:
+	var node:=button("",toggle_fullscreen)
+	node.tooltip_text="Alt/Option + Enter или F11 — переключить полный экран"
+	node.focus_mode=Control.FOCUS_NONE
+	screen_buttons.append(node)
+	return node
+
+func center_panel(node:Control,dimensions:Vector2)->void:
+	node.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
+	node.offset_left=-dimensions.x*.5
+	node.offset_top=-dimensions.y*.5
+	node.offset_right=dimensions.x*.5
+	node.offset_bottom=dimensions.y*.5
+
 func create_hud() -> void:
 	var layer := CanvasLayer.new()
 	add_child(layer)
@@ -254,11 +291,11 @@ func create_hud() -> void:
 	light_status_label=label("",16,Color(.62,.9,.73))
 	canvas.add_child(light_status_label)
 	light_status_label.position=Vector2(26,146)
-	var help := label("W / ↑ — газ    S / ↓ — тормоз, задний ход\nA D / ← → — руль    Пробел — ручник\nR — на дорогу (+5 с)    H — сигнал    M — звук    Esc — пауза",17)
+	var help := label("W / ↑ — газ    S / ↓ — тормоз, задний ход\nA D / ← → — руль    Пробел — ручник\nR — на дорогу (+5 с)    H — сигнал    M — звук    Esc — пауза\nF11 / Alt+Enter — полный экран",17)
 	canvas.add_child(help)
 	help.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_LEFT)
 	help.offset_left = 24
-	help.offset_top = -103
+	help.offset_top = -122
 	help.offset_right = 720
 	help.offset_bottom = -20
 	message_label = label("",22,Color(1,.77,.36))
@@ -273,6 +310,7 @@ func create_hud() -> void:
 	center_label.offset_right = 350
 	center_label.offset_bottom = 95
 	result_panel = panel(canvas,Vector2(300,245),Vector2(500,275))
+	center_panel(result_panel,Vector2(500,275))
 	var result_box := VBoxContainer.new()
 	result_box.add_theme_constant_override("separation",14)
 	result_panel.add_child(result_box)
@@ -281,12 +319,14 @@ func create_hud() -> void:
 	result_box.add_child(result_label)
 	result_box.add_child(button("В гараж  ·  Enter",restart))
 	result_panel.hide()
-	pause_panel = panel(canvas,Vector2(350,280),Vector2(400,220))
+	pause_panel = panel(canvas,Vector2(350,240),Vector2(400,320))
+	center_panel(pause_panel,Vector2(400,320))
 	var pause_box := VBoxContainer.new()
 	pause_box.add_theme_constant_override("separation",14)
 	pause_panel.add_child(pause_box)
 	pause_box.add_child(label("ПАУЗА",32))
 	pause_box.add_child(button("Продолжить  ·  Esc",toggle_pause))
+	pause_box.add_child(screen_button())
 	pause_box.add_child(button("Звук",show_sound_panel))
 	pause_box.add_child(button("В гараж",restart))
 	pause_panel.hide()
@@ -506,10 +546,23 @@ func create_garage() -> void:
 	garage_root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	garage_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var header := panel(garage_root,Vector2(24,24),Vector2(1052,180))
+	header.name="GarageHeader"
+	header.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
+	header.offset_left=24
+	header.offset_right=-24
+	header.offset_top=24
+	header.offset_bottom=204
 	var header_box := VBoxContainer.new()
 	header.add_child(header_box)
 	var game_title:=str(ProjectSettings.get_setting("application/config/name")).to_upper()
-	header_box.add_child(label(game_title+"  /  ГАРАЖ",30,Color(1,.72,.37)))
+	var title_row:=HBoxContainer.new()
+	header_box.add_child(title_row)
+	var title:=label(game_title+"  /  ГАРАЖ",30,Color(1,.72,.37))
+	title.size_flags_horizontal=Control.SIZE_EXPAND_FILL
+	title_row.add_child(title)
+	var display_button:=screen_button()
+	display_button.custom_minimum_size=Vector2(260,44)
+	title_row.add_child(display_button)
 	map_subtitle=label("",18)
 	header_box.add_child(map_subtitle)
 	var maps := HBoxContainer.new()
@@ -522,8 +575,15 @@ func create_garage() -> void:
 	for option in [map_desert_button,map_city_button,map_night_button,map_palm_button]:
 		option.focus_mode=Control.FOCUS_NONE
 		option.custom_minimum_size=Vector2(235,42)
+		option.size_flags_horizontal=Control.SIZE_EXPAND_FILL
 		maps.add_child(option)
 	var card := panel(garage_root,Vector2(24,550),Vector2(1052,226))
+	card.name="GarageCard"
+	card.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
+	card.offset_left=24
+	card.offset_right=-24
+	card.offset_top=-250
+	card.offset_bottom=-24
 	var content := VBoxContainer.new()
 	content.add_theme_constant_override("separation",8)
 	card.add_child(content)

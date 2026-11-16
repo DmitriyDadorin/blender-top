@@ -16,6 +16,10 @@ func run(game:Node)->void:
     check(artwork!=null and artwork.get_width()>=1000,"custom startup artwork included in application")
     if DisplayServer.get_name()!="headless":
         check(get_tree().root.title==str(ProjectSettings.get_setting("application/config/name")),"branded native window title")
+    if "--verify-display" in OS.get_cmdline_user_args():
+        await verify_display(game)
+        finish()
+        return
     if "--verify-crosswalks" in OS.get_cmdline_user_args():
         await verify_crosswalks(game)
         finish()
@@ -101,11 +105,14 @@ func crosswalk_samples(image:Image,camera:Camera3D,center:Vector3,basis:Basis)->
     var roughness:=0.0
     var contrast:=0.0
     var samples:=0
+    # Camera projections use viewport coordinates; screenshots use framebuffer
+    # pixels. Account for canvas scaling at fullscreen and other resolutions.
+    var pixels:=camera.get_viewport().get_final_transform()
     for stripe in [-5,-3,-1,5]:
         for dx in [-.25,0.0,.25]:
             for dz in [-.8,-.4,0.0,.4,.8]:
-                var pixel:=Vector2i(camera.unproject_position(center+basis*Vector3(stripe+dx,.0675,9+dz)))
-                var asphalt:=Vector2i(camera.unproject_position(center+basis*Vector3(stripe+.7,.055,9+dz)))
+                var pixel:=Vector2i(pixels*camera.unproject_position(center+basis*Vector3(stripe+dx,.0675,9+dz)))
+                var asphalt:=Vector2i(pixels*camera.unproject_position(center+basis*Vector3(stripe+.7,.055,9+dz)))
                 if pixel.x<2 or pixel.x>=image.get_width()-2 or pixel.y<2 or pixel.y>=image.get_height()-2:continue
                 if not Rect2i(Vector2i.ZERO,image.get_size()).has_point(asphalt):continue
                 var color:=image.get_pixelv(pixel)
@@ -162,6 +169,93 @@ func verify_crosswalks(game:Node)->void:
     var worst:=0.0
     for view in metrics.crosswalk_views:worst=maxf(worst,float(view.roughness))
     print("CROSSWALK_PIXEL_CHECK views=",metrics.crosswalk_views.size()," worst_roughness=",worst)
+
+func display_frames(count:int=6)->void:
+    for i in count:await get_tree().process_frame
+    await RenderingServer.frame_post_draw
+
+func display_image_fills_window(image:Image,window:Window)->bool:
+    if image.get_size()!=window.size:return false
+    for edge in [2,image.get_width()-3]:
+        for height in [.2,.5,.8]:
+            var color:=image.get_pixel(edge,int(image.get_height()*height))
+            if color.r+color.g+color.b<.005:return false
+    return true
+
+func verify_display(game:Node)->void:
+    if DisplayServer.get_name()=="headless":
+        check(false,"display verification requires a graphical renderer")
+        return
+    process_mode=Node.PROCESS_MODE_ALWAYS
+    game.audio_director.set_muted(true)
+    game.select_map("palm_bay")
+    var window:=get_tree().root
+    window.mode=Window.MODE_WINDOWED
+    await display_frames(40)
+    var usable:=DisplayServer.screen_get_usable_rect(window.current_screen).size-Vector2i(100,100)
+    metrics={"display_sizes":[]}
+    var sizes:=[Vector2i(1280,720),Vector2i(1280,800),Vector2i(1680,720),Vector2i(1000,750),Vector2i(720,1000)]
+    for requested in sizes:
+        var fit:=minf(1.0,minf(float(usable.x)/requested.x,float(usable.y)/requested.y))
+        window.size=Vector2i(Vector2(requested)*fit)
+        game.state=game.RaceState.SELECTING
+        game.garage_root.show()
+        game.hud_root.hide()
+        await display_frames()
+        var viewport:Rect2=game.garage_root.get_global_rect()
+        var header:Rect2=game.garage_root.get_node("GarageHeader").get_global_rect()
+        var card:Rect2=game.garage_root.get_node("GarageCard").get_global_rect()
+        check(absf(header.position.x-viewport.position.x-24)<2 and absf(header.end.x-viewport.end.x+24)<2 and absf(card.end.y-viewport.end.y+24)<2,"garage fits window "+str(requested))
+        var image:=window.get_texture().get_image()
+        var fills:=display_image_fills_window(image,window)
+        check(fills,"3D image fills window without black side bars "+str(requested))
+        metrics.display_sizes.append({"requested":[requested.x,requested.y],"actual":[window.size.x,window.size.y],"canvas":[viewport.size.x,viewport.size.y],"fills_window":fills})
+        for arg in OS.get_cmdline_user_args():
+            if arg.begins_with("--verify-display-screenshots="):
+                var directory:=arg.trim_prefix("--verify-display-screenshots=")
+                DirAccess.make_dir_recursive_absolute(directory)
+                image.save_png(directory.path_join("%dx%d-garage.png"%[requested.x,requested.y]))
+        game.garage_root.hide()
+        game.hud_root.show()
+        game.state=game.RaceState.FINISHED
+        game.result_label.text="ФИНИШ!\nТвоё время: 01:20.00\nРекорд: 01:20.00\nВозвратов на дорогу: 0"
+        game.camera_initialized=false
+        game.result_panel.show()
+        await display_frames()
+        viewport=game.hud_root.get_global_rect()
+        var result:Rect2=game.result_panel.get_global_rect()
+        var pause:Rect2=game.pause_panel.get_global_rect()
+        check(result.get_center().distance_to(viewport.get_center())<2 and pause.get_center().distance_to(viewport.get_center())<2,"finish and pause menus remain centered "+str(requested))
+        var minimap:Rect2=game.mini_map.get_global_rect()
+        var speed:Rect2=game.speed_label.get_global_rect()
+        check(absf(minimap.end.x-viewport.end.x+24)<2 and absf(speed.end.x-viewport.end.x+20)<2,"minimap and speed stay at the right edge "+str(requested))
+        for arg in OS.get_cmdline_user_args():
+            if arg.begins_with("--verify-display-screenshots="):
+                window.get_texture().get_image().save_png(arg.trim_prefix("--verify-display-screenshots=").path_join("%dx%d-finish.png"%[requested.x,requested.y]))
+        game.result_panel.hide()
+    game.state=game.RaceState.SELECTING
+    game.garage_root.show()
+    game.hud_root.hide()
+    var key:=InputEventKey.new()
+    key.physical_keycode=KEY_ENTER
+    key.keycode=KEY_ENTER
+    key.alt_pressed=true
+    key.pressed=true
+    Input.parse_input_event(key)
+    key=key.duplicate()
+    key.pressed=false
+    Input.parse_input_event(key)
+    await display_frames(50)
+    check(game.is_fullscreen() and game.state==game.RaceState.SELECTING,"Alt+Enter enters fullscreen without starting a race")
+    check(display_image_fills_window(window.get_texture().get_image(),window),"fullscreen image covers the display")
+    game.state=game.RaceState.RACING
+    game.toggle_pause()
+    game.screen_buttons[0].pressed.emit()
+    await display_frames(50)
+    check(not game.is_fullscreen() and get_tree().paused,"pause-menu button returns to windowed mode while paused")
+    game.toggle_pause()
+    check(game.screen_buttons[1].text.begins_with("На весь экран"),"garage button reflects current display mode")
+    print("DISPLAY_CHECK sizes=",metrics.display_sizes.size())
 
 func finish()->void:
     var report:={"ok":not failed,"engine":Engine.get_version_info().string,"checks":checks,"metrics":metrics}
